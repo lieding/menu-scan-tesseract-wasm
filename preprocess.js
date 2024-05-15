@@ -284,4 +284,65 @@ function thresholdFilter(pixels, level) {
   }
 }
 
-export default preprocessImage;
+// https://stackoverflow.com/questions/71243286/image-sharpening-with-mixer
+export function sharpen(context, width, height, mix = 1) {
+  //create an empty element with the given width/height
+  let dstData = context.createImageData(width, height),
+    dstBuff = new Uint32Array(dstData.data.buffer);
+  //collection of information
+  let pixel = context.getImageData(0, 0, width, height),
+    data = new Uint32Array(pixel.data.buffer);
+  //Everything to work with the matrix
+  let kernel = [
+      [0, -1, 0],
+      [-1, 5, -1],
+      [0, -1, 0],
+    ], // matrixа
+    katet = Math.round(Math.sqrt(kernel.length)) + 1, //root 9=3
+    half = (katet * 0.5) | 0; //3*0.5=1.5 discard values ​​after the decimal point
+  //pixel processing
+  let dstIndex = 0;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      let r = 0,
+        g = 0,
+        b = 0;
+      for (let sy = 0; sy < katet; sy++) {
+        const yy = Math.min(height - 1, Math.max(0, y + sy - half));
+        for (let sx = 0; sx < katet; sx++) {
+          const xx = Math.min(width - 1, Math.max(0, x + sx - half));
+          let pix = data[yy * width + xx];
+          r += (pix & 0xff) * kernel[sy][sx];
+          g += ((pix >> 8) & 0xff) * kernel[sy][sx];
+          b += ((pix >> 16) & 0xff) * kernel[sy][sx];
+        }
+      }
+      const red =
+        Math.min(
+          255,
+          Math.max(0, r * mix + (data[y * width + x] & 0xff) * (1 - mix)),
+        ) & 0xff;
+      const green =
+        Math.min(
+          255,
+          Math.max(
+            0,
+            g * mix + ((data[y * width + x] >> 8) & 0xff) * (1 - mix),
+          ),
+        ) & 0xff;
+      const blue =
+        Math.min(
+          255,
+          Math.max(
+            0,
+            b * mix + ((data[y * width + x] >> 16) & 0xff) * (1 - mix),
+          ),
+        ) & 0xff;
+      const alfa = data[y * width + x] & 0xff000000;
+
+      dstBuff[dstIndex++] =
+        red | (green << 8) | (blue << 16) | alfa | (blue << 16); //fill with changes
+    }
+  }
+  context.putImageData(dstData, 0, 0); // overwriting the canvas with new data
+}

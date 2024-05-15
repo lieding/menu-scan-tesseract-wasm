@@ -5,8 +5,8 @@
   "main": "ocr-app.js",
   "type": "module",
   "scripts": {
-    "build": "node copy-static-assets.js && esbuild ocr-app.js --target=es2020 --format=esm --minify --loader:.js=jsx --bundle --outfile=build/ocr-app.bundle.js",
-    "serve": "node copy-static-assets.js && esbuild ocr-app.js --target=es2020 --format=esm --loader:.js=jsx --bundle --servedir=. --outfile=build/ocr-app.bundle.js"
+    "build": "node copy-static-assets.js && esbuild index.js --target=es2020 --format=esm --minify --loader:.js=jsx --bundle --outfile=build/index.bundle.js",
+    "serve": "node copy-static-assets.js && esbuild index.js --target=es2020 --format=esm --loader:.js=jsx --bundle --servedir=. --outfile=build/index.bundle.js"
   },
   "repository": {
     "type": "git",

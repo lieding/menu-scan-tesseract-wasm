@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import cls from 'classnames';
-import preprocessImage from './preprocess';
+import cls from "classnames";
+import { sharpen } from "./preprocess";
 
 const VideoStatus = {
   INIT: 0,
   PLAYING: 1,
   STOPED: 2,
-}
+};
 
 const CameraVideo = ({ recognize }) => {
   const videoElRef = useRef(null);
@@ -14,7 +14,7 @@ const CameraVideo = ({ recognize }) => {
   const canvasElRef = useRef(null);
   const processingRef = useRef(false);
   const videoStatusRef = useRef(VideoStatus.INIT);
-  const [ wrapperSize, setWrapperSize ] = useState(null);
+  const [wrapperSize, setWrapperSize] = useState(null);
 
   const scan = useCallback(() => {
     if (processingRef.current) return;
@@ -22,7 +22,7 @@ const CameraVideo = ({ recognize }) => {
     if (!videoEl) return;
     const canvasEl = canvasElRef.current;
     if (!canvasEl) return;
-    const context = canvasEl.getContext('2d');
+    const context = canvasEl.getContext("2d");
     if (!context) return;
     const innerFrameEl = innerFrameElRef.current;
     if (!innerFrameEl) return;
@@ -30,34 +30,61 @@ const CameraVideo = ({ recognize }) => {
     const wrapperBounding = innerFrameEl.parentElement?.getBoundingClientRect();
     if (!wrapperBounding) return;
     // Here we need to record image from video stream, so we need to calulate the ration between the video stream and video in dom element,
-    // because generally the size of video playing in the page is smaller than the raw video stream  
-    const videoSize = { width: videoEl.videoWidth, height: videoEl.videoHeight };
-    const { width: widthRatio, height: heightRatio } = getVideo2DOMEleSizeRatio(videoSize, wrapperBounding);
-    const originLeft = (innerFrameBounding.left - wrapperBounding.left) * widthRatio;
-    const originTop = (innerFrameBounding.top - wrapperBounding.top) * heightRatio;
+    // because generally the size of video playing in the page is smaller than the raw video stream
+    const videoSize = {
+      width: videoEl.videoWidth,
+      height: videoEl.videoHeight,
+    };
+    const { width: widthRatio, height: heightRatio } = getVideo2DOMEleSizeRatio(
+      videoSize,
+      wrapperBounding,
+    );
+    const originLeft =
+      (innerFrameBounding.left - wrapperBounding.left) * widthRatio;
+    const originTop =
+      (innerFrameBounding.top - wrapperBounding.top) * heightRatio;
     const { width, height } = innerFrameBounding;
     context.imageSmoothingEnabled = false;
-    context.drawImage(videoEl, originLeft, originTop, width * widthRatio,
-      height * heightRatio, 0, 0, width, height);
-    context.putImageData(preprocessImage(canvasEl), 0, 0);
-    recognize(context.getImageData(0, 0, width, height));
+    context.drawImage(
+      videoEl,
+      originLeft,
+      originTop,
+      width * widthRatio,
+      height * heightRatio,
+      0,
+      0,
+      width,
+      height,
+    );
+    sharpen(context, width, height);
+    const promise = recognize(context.getImageData(0, 0, width, height));
+    if (promise) {
+      processingRef.current = true;
+      promise.finally(() => (processingRef.current = false));
+    } else {
+      processingRef.current = false;
+    }
   }, []);
 
   useEffect(() => {
     const videoEl = videoElRef.current;
     if (!videoEl) return;
-    videoEl.addEventListener("canplay", () => {
-      if (videoStatusRef.current === VideoStatus.INIT) return;
-      const width = 320;
-      const ratio = videoEl.videoWidth / width;
-      const height = videoEl.videoHeight / ratio;
-      videoEl.setAttribute('width', width.toString());
-      videoEl.setAttribute('height', height.toString());
-      setWrapperSize({ width, height });
-    }, false);
+    videoEl.addEventListener(
+      "canplay",
+      () => {
+        if (videoStatusRef.current === VideoStatus.INIT) return;
+        const width = 320;
+        const ratio = videoEl.videoWidth / width;
+        const height = videoEl.videoHeight / ratio;
+        videoEl.setAttribute("width", width.toString());
+        videoEl.setAttribute("height", height.toString());
+        setWrapperSize({ width, height });
+      },
+      false,
+    );
     navigator.mediaDevices
-      .getUserMedia({ audio: false, video: { facingMode: 'environment' } })
-      .then(stream => {
+      .getUserMedia({ audio: false, video: { facingMode: "environment" } })
+      .then((stream) => {
         videoEl.srcObject = stream;
         videoEl.play();
         videoStatusRef.current = VideoStatus.PLAYING;
@@ -67,26 +94,32 @@ const CameraVideo = ({ recognize }) => {
   }, []);
 
   const playing = videoStatusRef.current === VideoStatus.PLAYING;
-  const wrapperStyle = wrapperSize ?
-    { width: `${wrapperSize.width}px`, height: `${wrapperSize.height}px` } : undefined;
+  const wrapperStyle = wrapperSize
+    ? { width: `${wrapperSize.width}px`, height: `${wrapperSize.height}px` }
+    : undefined;
   return (
     <div className="cameraVideoWrapper" style={wrapperStyle}>
-      <video ref={el => videoElRef.current = el}>
+      <video ref={(el) => (videoElRef.current = el)}>
         Video is not supported in this browser
       </video>
       <div
         className={cls("innerFrame", playing ? "active" : null)}
-        ref={el => innerFrameElRef.current = el}
-      >
-      </div>
-      <canvas ref={el => canvasElRef.current = el} width="164" height="44" />
-  
+        ref={(el) => (innerFrameElRef.current = el)}
+      ></div>
+      <canvas
+        ref={(el) => (canvasElRef.current = el)}
+        width="164"
+        height="44"
+      />
     </div>
   );
-}
+};
 
 export default CameraVideo;
 
-function getVideo2DOMEleSizeRatio (videoSize, domElementSize) {
-  return { width: videoSize.width / domElementSize.width, height: videoSize.height / domElementSize.height };
+function getVideo2DOMEleSizeRatio(videoSize, domElementSize) {
+  return {
+    width: videoSize.width / domElementSize.width,
+    height: videoSize.height / domElementSize.height,
+  };
 }
