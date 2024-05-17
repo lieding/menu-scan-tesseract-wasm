@@ -2,28 +2,25 @@
   "name": "tesseract-wasm-example-web",
   "version": "1.0.0",
   "description": "Demo app for tesseract-wasm",
-  "main": "ocr-app.js",
   "type": "module",
+  "main": "src/index.html",
   "scripts": {
-    "build": "node copy-static-assets.js && esbuild ocr-app.js --target=es2020 --format=esm --minify --loader:.js=jsx --bundle --outfile=build/ocr-app.bundle.js",
-    "serve": "node copy-static-assets.js && esbuild ocr-app.js --target=es2020 --format=esm --loader:.js=jsx --bundle --servedir=. --outfile=build/ocr-app.bundle.js"
+    "build": "node copy-static-assets.js && vite build",
+    "serve": "vite"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/robertknight/tesseract-wasm.git"
-  },
-  "author": "Robert Knight <robertknight@gmail.com>",
+  "author": "",
   "license": "BSD-2-Clause",
-  "bugs": {
-    "url": "https://github.com/robertknight/tesseract-wasm/issues"
-  },
-  "homepage": "https://github.com/robertknight/tesseract-wasm#readme",
-  "devDependencies": {
+  "homepage": "",
+  "dependencies": {
     "classnames": "^2.3.1",
-    "esbuild": "^0.14.41",
-    "esbuild-scss-modules-plugin": "^1.1.1",
-    "react": "^18.1.0",
-    "react-dom": "^18.1.0",
-    "tesseract-wasm": "^0.10.0"
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tesseract-wasm": "^0.10.0",
+    "@tensorflow/tfjs": "^4.19.0",
+    "underscore": "^1.13.6"
+  },
+  "devDependencies": {
+    "vite": "^4.3.2",
+    "@vitejs/plugin-react": "3.1.0"
   }
 }
