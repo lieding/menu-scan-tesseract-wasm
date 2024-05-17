@@ -98,7 +98,9 @@ function App() {
             .map(box => box.rect);
           if (boxes?.length) {
             // console.log(boxes);
-            console.log(await recognize?.(image, boxes));
+            const res = await recognize?.(image, boxes);
+            const parsed = res?.map(({ words }) => words).flat(2).join(" ");
+            setDocumentText(parsed);
           }
           break;
         }

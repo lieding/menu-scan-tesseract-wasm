@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import cls from "classnames";
-import { sharpen } from "./preprocess";
+// import { sharpen } from "./preprocess";
 
 const VideoStatus = {
   INIT: 0,
@@ -56,7 +56,7 @@ const CameraVideo = ({ recognize }) => {
       width,
       height,
     );
-    sharpen(context, width, height);
+    // sharpen(context, width, height);
     const sharoedImageData = context.getImageData(0, 0, width, height);
     const image = new Image();
     image.onload = () => {
