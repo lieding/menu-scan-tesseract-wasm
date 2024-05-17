@@ -5,8 +5,9 @@
   "type": "module",
   "main": "src/index.html",
   "scripts": {
-    "build": "node copy-static-assets.js && vite build",
-    "serve": "vite"
+    "build": "vite build",
+    "serve": "vite",
+    "preview": "vite preview"
   },
   "author": "",
   "license": "BSD-2-Clause",

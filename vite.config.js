@@ -25,9 +25,6 @@ export default defineConfig((configEnv) => {
 
 	return {
 		plugins: [react()],
-		server: {
-			open: './src/index.html',
-		},
 		css: {
 			modules: {
 				generateScopedName: isDevelopment ? "[name]__[local]__[hash:base64:5]" : "[hash:base64:5]",
@@ -35,8 +32,10 @@ export default defineConfig((configEnv) => {
 		},
 		build: {
 			rollupOptions: {
-				input: {
-					app: './src/index.html'
+				output: {
+					entryFileNames: `assets/[name].js`,
+					chunkFileNames: `assets/[name].js`,
+					assetFileNames: `assets/[name].[ext]`,
 				}
 			}
 		}
