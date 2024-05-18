@@ -44,7 +44,6 @@ const CameraVideo = ({ recognize }) => {
     const originTop =
       (innerFrameBounding.top - wrapperBounding.top) * heightRatio;
     const { width, height } = innerFrameBounding;
-    context.imageSmoothingEnabled = false;
     context.drawImage(
       videoEl,
       originLeft,
