@@ -8,7 +8,7 @@ const VideoStatus = {
   STOPED: 2,
 };
 
-const CameraVideo = ({ recognize }) => {
+const CameraVideo = ({ recognize, rects }) => {
   const videoElRef = useRef(null);
   const innerFrameElRef = useRef(null);
   const canvasElRef = useRef(null);
@@ -100,6 +100,27 @@ const CameraVideo = ({ recognize }) => {
       })
       .catch(console.error);
   }, []);
+
+  useEffect(() => {
+    const canvasEl = canvasElRef.current;
+    if (!canvasEl) return;
+    const context = canvasEl.getContext("2d");
+    if (!rects?.length) {
+      context.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    } else {
+      context.save();
+      for (const { left, top, width, height } of rects) {
+        context.beginPath();
+        context.moveTo(left, top);
+        context.lineTo(left + width, top);
+        context.lineTo(left + width, top + height);
+        context.lineTo(left, top + height);
+        context.lineTo(left, top);
+        context.stroke();
+      }
+      context.restore();
+    }
+  }, [rects]);
 
   const playing = videoStatusRef.current === VideoStatus.PLAYING;
   const wrapperStyle = wrapperSize

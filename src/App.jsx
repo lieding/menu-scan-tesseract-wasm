@@ -31,21 +31,31 @@ function App() {
   const [error, setError] = useState(null);
   const [status, setStatus] = useState(null);
   const [outputFormat, setOutputFormat] = useState(OutputFormat.DETECTION);
+  const [rects, setRects] = useState([]);
 
-  const recognize = useLoadRecognitionModel();
+  // const recognize = useLoadRecognitionModel();
   const { detect } = useOCRClient();
 
   const process = useCallback(async (sharpenedImage, image) => {
     setError(null);
-    const rects = detect(sharpenedImage);
-    if (rects?.length) {
-      const recognizedLines = await recognize(image, rects);
-      if (recognizedLines?.length) {
-        setDocumentText(recognizedLines.flat(2).map(line => line.word).join(' '));
-      }
-    } else {
-      setDocumentText(null);
+    const boxes = detect(sharpenedImage);
+    const rects = [];
+    for (const [left, top, right, bottom] of boxes) {
+      const imageWidth = image.width, imageHeight = image.height;
+      const width = Math.min(imageWidth, right) - Math.max(0, left);
+      const height = Math.min(imageHeight, bottom) - Math.max(0, top);
+      rects.push({ left, top, width, height })
     }
+    console.log(rects)
+    setRects(rects);
+    // if (rects?.length) {
+    //   const recognizedLines = await recognize(image, rects);
+    //   if (recognizedLines?.length) {
+    //     setDocumentText(recognizedLines.flat(2).map(line => line.word).join(' '));
+    //   }
+    // } else {
+    //   setDocumentText(null);
+    // }
   }, []);
 
   return (
@@ -63,7 +73,7 @@ function App() {
           </option>
         ))}
       </select>
-      <CameraVideo recognize={process} />
+      <CameraVideo recognize={process} rects={rects} />
       <div style={{ height: "100px" }}></div>
       {error && (
         <div className="app__error">
