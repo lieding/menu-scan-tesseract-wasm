@@ -99,8 +99,10 @@ function App() {
           if (boxes?.length) {
             // console.log(boxes);
             const res = await recognize?.(image, boxes);
-            const parsed = res?.map(({ words }) => words).flat(2).join(" ");
-            setDocumentText(parsed);
+            if (res?.length) {
+              const parsed = res.flat(2).map(it => it.word).join(' ');
+              setDocumentText(parsed);
+            }
           }
           break;
         }
@@ -143,7 +145,6 @@ function App() {
         !isNormalOrientation(orientation) &&
         `Orientation: ${formatOrientation(orientation)}`}
       {documentText && <pre className="app__text">{documentText}</pre>}
-  
     </div>
   );
 }

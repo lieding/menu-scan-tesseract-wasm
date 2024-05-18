@@ -117,11 +117,8 @@ async function extractWords (recognitionModel, image, boxes, inputSize) {
   const promises = chunks.map(chunk => {
     return extractWordsFromCrop(recognitionModel, chunk, inputSize)
       .then(words =>
-        words?.map(
-          (word, index) => ({
-            words: word ? [word] : [],
-          })
-        )
+        words?.map((word, index) => ({ word })
+      )
     );
   });
   return await Promise.all(promises);

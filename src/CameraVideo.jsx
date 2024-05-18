@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import cls from "classnames";
-// import { sharpen } from "./preprocess";
+import { sharpen } from "./preprocess";
 
 const VideoStatus = {
   INIT: 0,
@@ -56,11 +56,11 @@ const CameraVideo = ({ recognize }) => {
       width,
       height,
     );
-    // sharpen(context, width, height);
-    const sharoedImageData = context.getImageData(0, 0, width, height);
     const image = new Image();
+    let sharedImageData;
     image.onload = () => {
-      const promise = recognize(sharoedImageData, image);
+      if (!sharedImageData) return;
+      const promise = recognize(sharedImageData, image);
       if (promise) {
         processingRef.current = true;
         promise.finally(() => (processingRef.current = false));
@@ -71,6 +71,8 @@ const CameraVideo = ({ recognize }) => {
     image.onabort = console.error;
     const imageSrc = canvasEl.toDataURL("image/png", 1.0);
     image.src = imageSrc;
+    sharpen(context, width, height);
+    sharedImageData = context.getImageData(0, 0, width, height);
   }, []);
 
   useEffect(() => {
