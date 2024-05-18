@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { OCRClient } from "tesseract-wasm";
 import CameraVideo from "./CameraVideo";
 import { useLoadRecognitionModel } from './recognitionHook';
+import { useOCRClient } from './useOCRSCliet';
 
 function isNormalOrientation(orientation) {
   return orientation.confidence > 0 && orientation.rotation === 0;
@@ -27,95 +27,26 @@ const Status = {
 };
 
 function App() {
-  const ocrClientRef = useRef(null);
-  const cancelledFlagRef = useRef(false);
   const [documentText, setDocumentText] = useState(null);
   const [error, setError] = useState(null);
   const [status, setStatus] = useState(null);
-  const [orientation, setOrientation] = useState(null);
-  const [ocrTime, setOCRTime] = useState(null);
   const [outputFormat, setOutputFormat] = useState(OutputFormat.DETECTION);
 
-  useEffect(() => {
-    // Initialize the OCR engine when recognition is performed for the first
-    // time.
-    const client = new OCRClient();
-
-    // Fetch OCR model. This demo fetches the model directly from GitHub,
-    // but in production you should serve it yourself and make sure HTTP
-    // compression and caching are applied to reduce loading time.
-    setStatus(Status.INITLISATION);
-    client
-      .loadModel(
-        "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main/eng.traineddata",
-      )
-      .then(() => (ocrClientRef.current = client));
-    return () => {
-      cancelledFlagRef.current = true;
-    };
-  }, []);
-
   const recognize = useLoadRecognitionModel();
+  const { detect } = useOCRClient();
 
   const process = useCallback(async (sharpenedImage, image) => {
-    if (!sharpenedImage || !ocrClientRef.current) {
-      return;
-    }
     setError(null);
-    setOrientation(null);
-    setOCRTime(null);
-
-    cancelledFlagRef.current = false;
-
-    const ocr = ocrClientRef.current;
-    const startTime = performance.now();
-
-    try {
-      await ocr.loadImage(sharpenedImage);
-      if (cancelledFlagRef.current) return;
-
-      const orientation = await ocr.getOrientation();
-      setOrientation(orientation);
-
-      if (cancelledFlagRef.current) return;
-
-      // Get the text as a single string. This will be quick since OCR has
-      // already been performed.
-      let text, boxes;
-      switch (outputFormat) {
-        case OutputFormat.HOCR:
-          text = await ocr.getHOCR();
-          setDocumentText(text);
-          break;
-        case OutputFormat.TEXT:
-          text = await ocr.getText();
-          setDocumentText(text);
-          break;
-        case OutputFormat.DETECTION: {
-          boxes = await ocr.getBoundingBoxes("word");
-          boxes = boxes
-            .filter((box) => [0, 1, 2].includes(box?.flags))
-            .map(box => box.rect);
-          if (boxes?.length) {
-            // console.log(boxes);
-            const res = await recognize?.(image, boxes);
-            if (res?.length) {
-              const parsed = res.flat(2).map(it => it.word).join(' ');
-              setDocumentText(parsed);
-            }
-          }
-          break;
-        }
+    const rects = detect(sharpenedImage);
+    if (rects?.length) {
+      const recognizedLines = await recognize(image, rects);
+      if (recognizedLines?.length) {
+        setDocumentText(recognizedLines.flat(2).map(line => line.word).join(' '));
       }
-      const endTime = performance.now();
-      setOCRTime(Math.round(endTime - startTime));
-    } catch (err) {
-      console.error(err);
-      setError(err);
-    } finally {
-      setStatus(null);
+    } else {
+      setDocumentText(null);
     }
-  }, [outputFormat]);
+  }, []);
 
   return (
     <div className="app">
@@ -140,10 +71,6 @@ function App() {
         </div>
       )}
       {status !== null && <div>{status}…</div>}
-      {ocrTime !== null && <div>{ocrTime}ms</div>}
-      {orientation !== null &&
-        !isNormalOrientation(orientation) &&
-        `Orientation: ${formatOrientation(orientation)}`}
       {documentText && <pre className="app__text">{documentText}</pre>}
     </div>
   );

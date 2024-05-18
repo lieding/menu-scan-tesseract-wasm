@@ -17,6 +17,8 @@ async function loadRecognitionModel (recognitionModel, recoConfig) {
     recognitionModel.current = await loadGraphModel(recoConfig.path);
   } catch (error) {
     console.error(error);
+  } finally {
+    console.log("tenqorflow current backend: " + getBackend());    
   }
 }
 /**
@@ -25,11 +27,11 @@ async function loadRecognitionModel (recognitionModel, recoConfig) {
 */
 function getCrops (image, boxes) {
   const promises = [];
-  for (const { left, top, right, bottom } of boxes) {
+  for (const [left, top, right, bottom] of boxes) {
     const imageWidth = image.width, imageHeight = image.height;
-    const width = imageWidth - left - right;
-    const height = imageHeight - top - bottom;
-    if (width <= 0 || height <= 0) continue;
+    const width = Math.min(imageWidth, right) - Math.max(0, left);
+    const height = Math.min(imageHeight, bottom) - Math.max(0, top);
+    if (width < 0 || height < 0) continue;
     const canvasEl = document.createElement("canvas");
     canvasEl.width = width;
     canvasEl.height = height;
@@ -130,7 +132,6 @@ export function useLoadRecognitionModel () {
   const recognitionModelRef = useRef(null);
   useEffect(() => {
     loadRecognitionModel(recognitionModelRef, RecoConfig);
-    console.log("tenqorflow current backend: " + getBackend());    
   }, []);
 
   const recognize = useCallback((image, boxes) => {

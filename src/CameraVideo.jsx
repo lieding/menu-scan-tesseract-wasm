@@ -70,7 +70,7 @@ const CameraVideo = ({ recognize }) => {
     image.onabort = console.error;
     const imageSrc = canvasEl.toDataURL("image/png", 1.0);
     image.src = imageSrc;
-    // sharpen(context, width, height);
+    sharpen(context, width, height);
     sharedImageData = context.getImageData(0, 0, width, height);
   }, []);
 
