@@ -33,7 +33,7 @@ function App() {
   const [outputFormat, setOutputFormat] = useState(OutputFormat.DETECTION);
   const [rects, setRects] = useState([]);
 
-  // const recognize = useLoadRecognitionModel();
+  const recognize = useLoadRecognitionModel();
   const { detect } = useOCRClient();
 
   const process = useCallback(async (sharpenedImage, image) => {
@@ -48,14 +48,14 @@ function App() {
     }
     console.log(rects)
     setRects(rects);
-    // if (rects?.length) {
-    //   const recognizedLines = await recognize(image, rects);
-    //   if (recognizedLines?.length) {
-    //     setDocumentText(recognizedLines.flat(2).map(line => line.word).join(' '));
-    //   }
-    // } else {
-    //   setDocumentText(null);
-    // }
+    if (rects?.length) {
+      const recognizedLines = await recognize(image, rects);
+      if (recognizedLines?.length) {
+        setDocumentText(recognizedLines.flat(2).map(line => line.word).join(' '));
+      }
+    } else {
+      setDocumentText(null);
+    }
   }, []);
 
   return (

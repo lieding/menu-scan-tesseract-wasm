@@ -27,10 +27,7 @@ async function loadRecognitionModel (recognitionModel, recoConfig) {
 */
 function getCrops (image, boxes) {
   const promises = [];
-  for (const [left, top, right, bottom] of boxes) {
-    const imageWidth = image.width, imageHeight = image.height;
-    const width = Math.min(imageWidth, right) - Math.max(0, left);
-    const height = Math.min(imageHeight, bottom) - Math.max(0, top);
+  for (const { left, top, width, height } of boxes) {
     if (width < 0 || height < 0) continue;
     const canvasEl = document.createElement("canvas");
     canvasEl.width = width;
@@ -126,7 +123,7 @@ async function extractWords (recognitionModel, image, boxes, inputSize) {
   return await Promise.all(promises);
 }
 
-const RecoConfig = RECO_CONFIG.crnn_mobilenet_v2;
+const RecoConfig = RECO_CONFIG.crnn_mobilenet_v3_small;
 
 export function useLoadRecognitionModel () {
   const recognitionModelRef = useRef(null);

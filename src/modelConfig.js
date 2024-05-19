@@ -14,6 +14,13 @@ export const RECO_CONFIG = {
     width: 128,
     path: "/models/crnn_mobilenet_v2/model.json",
   },
+  crnn_mobilenet_v3_small: {
+    value: "crnn_mobilenet_v3_small",
+    label: "CRNN (Mobilenet V3 Small)",
+    height: 32,
+    width: 128,
+    path: "/models/crnn_mobilenet_v3_small/model.json",
+  },
 };
 
 // export const VOCAB =
