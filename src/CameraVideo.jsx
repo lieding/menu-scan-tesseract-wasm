@@ -57,7 +57,7 @@ const CameraVideo = ({ process, rects }) => {
       transformedWidth,
       transformedHeight,
     );
-    sharpen(context, width, height);
+    sharpen(context, transformedWidth, transformedHeight);
     const sharedImageData = context.getImageData(0, 0, transformedWidth, transformedHeight);
     const promise = process(sharedImageData);
     if (promise) {
