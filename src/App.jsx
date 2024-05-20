@@ -148,10 +148,7 @@ function App() {
       )}
       {status !== null && <div>{status}…</div>}
       {ocrTime !== null && <div>{ocrTime}ms</div>}
-      {orientation !== null &&
-        !isNormalOrientation(orientation) &&
-        `Orientation: ${formatOrientation(orientation)}`}
-      {documentText && <pre className="app__text">{documentText}</pre>}
+      {/* {documentText && <pre className="app__text">{documentText}</pre>} */}
     </div>
   );
 }
