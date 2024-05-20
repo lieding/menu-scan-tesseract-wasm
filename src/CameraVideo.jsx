@@ -8,7 +8,7 @@ const VideoStatus = {
   STOPED: 2,
 };
 
-const CameraVideo = ({ recognize }) => {
+const CameraVideo = ({ process, rects }) => {
   const videoElRef = useRef(null);
   const innerFrameElRef = useRef(null);
   const canvasElRef = useRef(null);
@@ -29,8 +29,7 @@ const CameraVideo = ({ recognize }) => {
     const innerFrameBounding = innerFrameEl.getBoundingClientRect();
     const wrapperBounding = innerFrameEl.parentElement?.getBoundingClientRect();
     if (!wrapperBounding) return;
-    // Here we need to record image from video stream, so we need to calulate the ration between the video stream and video in dom element,
-    // because generally the size of video playing in the page is smaller than the raw video stream
+  
     const videoSize = {
       width: videoEl.videoWidth,
       height: videoEl.videoHeight,
@@ -44,34 +43,29 @@ const CameraVideo = ({ recognize }) => {
     const originTop =
       (innerFrameBounding.top - wrapperBounding.top) * heightRatio;
     const { width, height } = innerFrameBounding;
+    const transformedWidth = width * widthRatio, transformedHeight = height * heightRatio;
+    canvasEl.width = transformedWidth;
+    canvasEl.height = transformedHeight;
     context.drawImage(
       videoEl,
       originLeft,
       originTop,
-      width * widthRatio,
-      height * heightRatio,
+      transformedWidth,
+      transformedHeight,
       0,
       0,
-      width,
-      height,
+      transformedWidth,
+      transformedHeight,
     );
-    const image = new Image();
-    let sharedImageData;
-    image.onload = () => {
-      if (!sharedImageData) return;
-      const promise = recognize(sharedImageData, image);
-      if (promise) {
-        processingRef.current = true;
-        promise.finally(() => (processingRef.current = false));
-      } else {
-        processingRef.current = false;
-      }
+    sharpen(context, width, height);
+    const sharedImageData = context.getImageData(0, 0, transformedWidth, transformedHeight);
+    const promise = process(sharedImageData);
+    if (promise) {
+      processingRef.current = true;
+      promise.finally(() => (processingRef.current = false));
+    } else {
+      processingRef.current = true;
     }
-    image.onabort = console.error;
-    const imageSrc = canvasEl.toDataURL("image/png", 1.0);
-    image.src = imageSrc;
-    // sharpen(context, width, height);
-    sharedImageData = context.getImageData(0, 0, width, height);
   }, []);
 
   useEffect(() => {
@@ -101,6 +95,28 @@ const CameraVideo = ({ recognize }) => {
       .catch(console.error);
   }, []);
 
+  useEffect(() => {
+    const canvasEl = canvasElRef.current;
+    if (!canvasEl) return;
+    const context = canvasEl.getContext("2d");
+    if (!rects?.length) {
+      context.clearRect(0, 0, canvasEl.width, canvasEl.height);
+    } else {
+      context.save();
+      for (const { left, top, width, height } of rects) {
+        context.beginPath();
+        context.moveTo(left, top);
+        context.lineTo(left + width, top);
+        context.lineTo(left + width, top + height);
+        context.lineTo(left, top + height);
+        context.lineTo(left, top);
+        context.strokeStyle = "red";
+        context.stroke();
+      }
+      context.restore();
+    }
+  }, [rects]);
+
   const playing = videoStatusRef.current === VideoStatus.PLAYING;
   const wrapperStyle = wrapperSize
     ? { width: `${wrapperSize.width}px`, height: `${wrapperSize.height}px` }
@@ -117,8 +133,6 @@ const CameraVideo = ({ recognize }) => {
       ></div>
       <canvas
         ref={(el) => (canvasElRef.current = el)}
-        width="164"
-        height="44"
       />
     </div>
   );

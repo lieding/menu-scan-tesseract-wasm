@@ -35,6 +35,7 @@ function App() {
   const [orientation, setOrientation] = useState(null);
   const [ocrTime, setOCRTime] = useState(null);
   const [outputFormat, setOutputFormat] = useState(OutputFormat.DETECTION);
+  const [rects, setRects] = useState([]);
 
   useEffect(() => {
     // Initialize the OCR engine when recognition is performed for the first
@@ -55,9 +56,9 @@ function App() {
     };
   }, []);
 
-  const recognize = useLoadRecognitionModel();
+  // const recognize = useLoadRecognitionModel();
 
-  const process = useCallback(async (sharpenedImage, image) => {
+  const process = useCallback(async (sharpenedImage) => {
     if (!sharpenedImage || !ocrClientRef.current) {
       return;
     }
@@ -93,16 +94,22 @@ function App() {
           break;
         case OutputFormat.DETECTION: {
           boxes = await ocr.getBoundingBoxes("word");
+          const imageWidth = sharpenedImage.width, imageHeight = sharpenedImage.height;
           boxes = boxes
-            .filter((box) => [0, 1, 2].includes(box?.flags))
-            .map(box => box.rect);
+            // .filter((box) => [0, 1, 2].includes(box?.flags))
+            .map(box => box.rect)
+            .filter(Boolean)
+            .map(({ left, top, right, bottom }) => {
+              const width = imageWidth - left - right;
+              const height = imageHeight - top - bottom;
+              if (width <= 0 || height <= 0) return null;
+              return { left, top, width, height };
+            })
+            .filter(Boolean);
           if (boxes?.length) {
-            // console.log(boxes);
-            const res = await recognize?.(image, boxes);
-            if (res?.length) {
-              const parsed = res.flat(2).map(it => it.word).join(' ');
-              setDocumentText(parsed);
-            }
+            setRects(boxes);
+          } else {
+            setRects([]);
           }
           break;
         }
@@ -132,7 +139,7 @@ function App() {
           </option>
         ))}
       </select>
-      <CameraVideo recognize={process} />
+      <CameraVideo process={process} rects={rects} />
       <div style={{ height: "100px" }}></div>
       {error && (
         <div className="app__error">
